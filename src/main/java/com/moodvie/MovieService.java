@@ -14,12 +14,11 @@ public class MovieService {
     static final String GROQ_API_KEY;
 
     static {
-    // Try environment variables first, then properties file
-    String tmdb = System.getenv("tmdb.api.key");
-    String groq = System.getenv("groq.api.key");
-    String dbUrl = System.getenv("db.url");
-    String dbUser = System.getenv("db.username");
-    String dbPass = System.getenv("db.password");
+    String tmdb = System.getenv("TMDB_API_KEY");
+    String groq = System.getenv("GROQ_API_KEY");
+    String dbUrl = System.getenv("DB_URL");
+    String dbUser = System.getenv("DB_USER");
+    String dbPass = System.getenv("DB_PASSWORD");
 
     if (tmdb == null) {
         try {
@@ -41,6 +40,8 @@ public class MovieService {
     DB_USER = dbUser;
     DB_PASSWORD = dbPass;
 }
+
+    
 
     // Connect to MySQL database
     public static Connection connect() throws SQLException {
