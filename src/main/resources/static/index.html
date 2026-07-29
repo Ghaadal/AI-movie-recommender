@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodvie</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0d0d0d; color: #fff; font-family: 'Segoe UI', sans-serif; }
+        
+        .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: bold; color: #26A69A; }
+        .username-bar { display: flex; gap: 10px; align-items: center; }
+        .username-bar input { padding: 8px 15px; border-radius: 20px; border: none; background: #333; color: #fff; }
+        
+        .search-section { text-align: center; padding: 50px 20px; background: linear-gradient(180deg, #16213e, #0d0d0d); }
+        .search-section h1 { font-size: 42px; margin-bottom: 10px; }
+        .search-section p { color: #aaa; margin-bottom: 30px; font-size: 16px; }
+        .search-box { display: flex; gap: 10px; max-width: 600px; margin: 0 auto; }
+        .search-box input { flex: 1; padding: 15px 20px; border-radius: 30px; border: none; background: #1e1e1e; color: #fff; font-size: 16px; outline: none; border: 1px solid #333; }
+        .search-box input:focus { border-color: #26A69A; }
+        .search-box button { padding: 15px 30px; background: #26A69A; color: #fff; border: none; border-radius: 30px; font-size: 16px; cursor: pointer; }
+        .search-box button:hover { background: #1d7a70; }
+
+        .tabs { display: flex; gap: 20px; padding: 20px 40px; border-bottom: 1px solid #222; }
+        .tab { padding: 10px 20px; border-radius: 20px; cursor: pointer; color: #aaa; }
+        .tab.active { background: #26A69A; color: #fff; }
+
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 30px 40px; }
+        
+        .movie-card { background: #1a1a1a; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
+        .movie-card:hover { transform: scale(1.05); }
+        .movie-card img { width: 100%; height: 280px; object-fit: cover; }
+        .movie-card .no-poster { width: 100%; height: 280px; background: #333; display: flex; align-items: center; justify-content: center; font-size: 50px; }
+        .movie-info { padding: 12px; }
+        .movie-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .movie-meta { color: #aaa; font-size: 12px; display: flex; justify-content: space-between; }
+        .movie-rating { color: #f5c518; }
+        .movie-reason { color: #ccc; font-size: 12px; margin-top: 8px; font-style: italic; }
+        
+        /* Save button */
+        .save-btn { width: 100%; margin-top: 10px; padding: 8px; background: #26A69A; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .save-btn:hover { background: #1d7a70; }
+        
+        /* Remove button - only shows in My Saved */
+        .remove-btn { width: 100%; margin-top: 5px; padding: 8px; background: #333; border: none; color: #ff4444; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .remove-btn:hover { background: #ff4444; color: #fff; }
+        
+        .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #26A69A; background: transparent; color: #fff; cursor: pointer; font-size: 13px; }
+        .filter-btn.active { background: #26A69A; }
+        .filter-btn:hover { background: #26A69A; }
+
+        /* Logout button */
+        .logout-btn { padding: 8px 15px; border-radius: 20px; border: none; background: #ff4444; color: #fff; cursor: pointer; font-size: 13px; }
+        .logout-btn:hover { background: #cc0000; }
+
+        .loading { text-align: center; padding: 50px; color: #aaa; font-size: 18px; }
+        .section-title { padding: 20px 40px 0; font-size: 22px; color: #26A69A; }
+    </style>
+</head>
+<body>
+
+<!-- Header with logo and username -->
+<div class="header">
+    <div class="logo">Moodvie</div>
+    <div class="username-bar">
+        <input type="text" id="username" placeholder="Your name..." value="" readonly>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<!-- Search section -->
+<div class="search-section">
+    <h1>What do you feel like watching?</h1>
+    <p>Tell me anything — mood, actor, director, theme, or story</p>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by mood, actor, director, or story...">
+        <button onclick="searchMovies()">Ask AI</button>
+    </div>
+</div>
+
+<!-- Navigation tabs -->
+<div class="tabs">
+    <div class="tab active" onclick="showTab('trending', this)">Trending Now</div>
+    <div class="tab" onclick="showTab('results', this)">AI Results</div>
+    <div class="tab" onclick="showTab('foryou', this)">For You</div>
+    <div class="tab" onclick="showTab('saved', this)">My Saved</div>
+</div>
+
+<!-- Trending section -->
+<div id="trending-section">
+    <div class="section-title">Trending This Week</div>
+    <div class="movies-grid" id="trending-grid">
+        <div class="loading">Loading trending movies...</div>
+    </div>
+</div>
+
+<!-- AI Results section -->
+<div id="results-section" style="display:none">
+    <div class="section-title">AI Recommendations</div>
+    <div class="movies-grid" id="results-grid"></div>
+</div>
+
+<!-- For You section -->
+<div id="foryou-section" style="display:none">
+    <div class="section-title">Recommended For You</div>
+    <div class="movies-grid" id="foryou-grid"></div>
+</div>
+
+<!-- My Saved section -->
+<div id="saved-section" style="display:none">
+    <div class="section-title">My Saved Movies</div>
+    <!-- Filter buttons -->
+    <div style="padding: 10px 40px; display: flex; gap: 10px;">
+        <button class="filter-btn active" onclick="filterSaved('rating', this)">Top Rated</button>
+        <button class="filter-btn" onclick="filterSaved('newest', this)">Newest First</button>
+        <button class="filter-btn" onclick="filterSaved('oldest', this)">Oldest First</button>
+    </div>
+    <div class="movies-grid" id="saved-grid"></div>
+</div>
+
+<script>
+    // Check if user is logged in - redirect to login if not
+    const currentUser = localStorage.getItem('moodvie_user');
+    if (!currentUser) {
+        window.location.href = '/login.html';
+    }
+
+    // Set username from localStorage
+    document.getElementById('username').value = currentUser || '';
+
+    // Logout function
+    function logout() {
+        localStorage.removeItem('moodvie_user');
+        window.location.href = '/login.html';
+    }
+
+    // Store saved movies data for filtering
+    let savedMoviesData = [];
+
+    // Switch between tabs
+    function showTab(tab, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('trending-section').style.display = 'none';
+        document.getElementById('results-section').style.display = 'none';
+        document.getElementById('foryou-section').style.display = 'none';
+        document.getElementById('saved-section').style.display = 'none';
+        document.getElementById(tab + '-section').style.display = 'block';
+        if (tab === 'saved') loadSaved();
+        if (tab === 'foryou') loadForYou();
+    }
+
+    // Create movie card - hideSave hides save button in My Saved tab
+    function createMovieCard(movie, showReason = false, showRemove = false, hideSave = false) {
+        const posterUrl = movie.poster && movie.poster.length > 35 ? movie.poster : null;
+
+        // Show poster image or placeholder
+        const posterHtml = posterUrl
+            ? `<img src="${posterUrl}" alt="${movie.title}" onerror="this.parentElement.innerHTML='<div class=\\'no-poster\\'>🎬</div>'">`
+            : `<div class="no-poster">🎬</div>`;
+
+        // Show AI reason if available
+        const reason = showReason && movie.reason
+            ? `<div class="movie-reason">${movie.reason}</div>` : '';
+
+        const safeTitle = movie.title.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        const safePoster = (movie.poster || '').replace(/'/g, "\\'");
+
+        // Show remove button only in My Saved tab
+        const removeBtn = showRemove
+            ? `<button class="remove-btn" onclick="removeMovie('${safeTitle}')">🗑 Remove</button>` : '';
+
+        // Hide save button in My Saved tab
+        const saveBtn = !hideSave
+            ? `<button class="save-btn" onclick="saveMovie('${safeTitle}', ${movie.rating || 0}, '${safePoster}')">+ Save</button>` : '';
+
+        return `
+            <div class="movie-card">
+                ${posterHtml}
+                <div class="movie-info">
+                    <div class="movie-title">${movie.title}</div>
+                    <div class="movie-meta">
+                        <span>${movie.year || ''}</span>
+                        <span class="movie-rating">★ ${movie.rating || 0}</span>
+                    </div>
+                    ${reason}
+                    ${saveBtn}
+                    ${removeBtn}
+                </div>
+            </div>
+        `;
+    }
+
+    // Load trending movies from backend
+    async function loadTrending() {
+        const grid = document.getElementById('trending-grid');
+        grid.innerHTML = '<div class="loading">Loading...</div>';
+        try {
+            const res = await fetch('/trending');
+            const movies = await res.json();
+            grid.innerHTML = movies.map(m => createMovieCard(m)).join('');
+        } catch(e) {
+            grid.innerHTML = '<div class="loading">Error loading trending movies.</div>';
+        }
+    }
+
+    // Search movies using AI
+    async function searchMovies() {
+        const query = document.getElementById('searchInput').value;
+        if (!query) return;
+
+        // Switch to AI Results tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab')[1].classList.add('active');
+        document.getElementById('trending-section').style.display = 'none';
+        document.getElementById('results-section').style.display = 'block';
+        document.getElementById('foryou-section').style.display = 'none';
+        document.getElementById('saved-section').style.display = 'none';
+
+        const grid = document.getElementById('results-grid');
+        grid.innerHTML = '<div class="loading">AI is thinking...</div>';
+
+        try {
+            const res = await fetch(`/search?query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            const movies = data.movies || [];
+            if (movies.length === 0) {
+                grid.innerHTML = '<div class="loading">No movies found. Try different keywords.</div>';
+            } else {
+                grid.innerHTML = movies.map(m => createMovieCard(m, true)).join('');
+            }
+        } catch(e) {
+            grid.innerHTML = '<div class="loading">Error. Please try again.</div>';
+        }
+    }
+
+    // Load personalized recommendations
+    async function loadForYou() {
+        const username = document.getElementById('username').value || currentUser;
+        const grid = document.getElementById('foryou-grid');
+        grid.innerHTML = '<div class="loading">AI is learning your taste... ✨</div>';
+        try {
+            const res = await fetch(`/foryou?username=${username}`);
+            const movies = await res.json();
+            if (movies.length === 0) {
+                grid.innerHTML = '<div class="loading">Save some movies first so I can learn your taste!</div>';
+            } else {
+                grid.innerHTML = movies.map(m => createMovieCard(m, true)).join('');
+            }
+        } catch(e) {
+            grid.innerHTML = '<div class="loading">Error loading recommendations.</div>';
+        }
+    }
+
+    // Load saved movies from backend
+    async function loadSaved() {
+        const username = document.getElementById('username').value || currentUser;
+        const grid = document.getElementById('saved-grid');
+        grid.innerHTML = '<div class="loading">Loading...</div>';
+        try {
+            const res = await fetch(`/saved?username=${username}`);
+            savedMoviesData = await res.json();
+            if (savedMoviesData.length === 0) {
+                grid.innerHTML = '<div class="loading">No saved movies yet.</div>';
+            } else {
+                renderSaved(savedMoviesData);
+            }
+        } catch(e) {
+            grid.innerHTML = '<div class="loading">Error loading saved movies.</div>';
+        }
+    }
+
+    // Filter saved movies by rating or date
+    function filterSaved(type, el) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+
+        let sorted = [...savedMoviesData];
+        if (type === 'rating') {
+            sorted.sort((a, b) => b.rating - a.rating);
+        } else if (type === 'newest') {
+            sorted.reverse();
+        }
+        renderSaved(sorted);
+    }
+
+    // Render saved movies - hide save button, show remove button
+    function renderSaved(movies) {
+        const grid = document.getElementById('saved-grid');
+        grid.innerHTML = movies.map(m => createMovieCard(m, false, true, true)).join('');
+    }
+
+    // Save movie to backend
+    async function saveMovie(title, rating, poster) {
+        const username = document.getElementById('username').value || currentUser;
+        try {
+            const res = await fetch('/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, title, rating, poster})
+            });
+           const data = await res.text();
+       if (data === 'Already saved') {
+        alert(title + ' is already in your saved list!');
+}     else {
+      alert('Saved: ' + title);
+}
+        } catch(e) {
+            alert('Error saving movie.');
+        }
+    }
+
+    // Remove movie from saved list
+    async function removeMovie(title) {
+        const username = document.getElementById('username').value || currentUser;
+        if (!confirm('Remove ' + title + ' from saved?')) return;
+        try {
+            await fetch('/saved', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, title})
+            });
+            loadSaved();
+        } catch(e) {
+            alert('Error removing movie.');
+        }
+    }
+
+    // Search on Enter key press
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchMovies();
+    });
+
+    // Load trending on page load
+    loadTrending();
+</script>
+
+</body>
+</html>
