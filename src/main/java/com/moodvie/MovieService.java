@@ -13,18 +13,33 @@ public class MovieService {
     static final String TMDB_API_KEY;
     static final String GROQ_API_KEY;
 
-static {
-    try {
-        java.util.Properties props = new java.util.Properties();
-        props.load(MovieService.class.getClassLoader().getResourceAsStream("application.properties"));
-        DB_URL = props.getProperty("db.url");
-        DB_USER = props.getProperty("db.username");
-        DB_PASSWORD = props.getProperty("db.password");
-        TMDB_API_KEY = props.getProperty("tmdb.api.key");
-        GROQ_API_KEY = props.getProperty("groq.api.key");
-    } catch (Exception e) {
-        throw new RuntimeException("Failed to load config: " + e.getMessage());
+    static {
+    // Try environment variables first, then properties file
+    String tmdb = System.getenv("tmdb.api.key");
+    String groq = System.getenv("groq.api.key");
+    String dbUrl = System.getenv("db.url");
+    String dbUser = System.getenv("db.username");
+    String dbPass = System.getenv("db.password");
+
+    if (tmdb == null) {
+        try {
+            java.util.Properties props = new java.util.Properties();
+            props.load(MovieService.class.getClassLoader().getResourceAsStream("application.properties"));
+            tmdb = props.getProperty("tmdb.api.key");
+            groq = props.getProperty("groq.api.key");
+            dbUrl = props.getProperty("db.url");
+            dbUser = props.getProperty("db.username");
+            dbPass = props.getProperty("db.password");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load config: " + e.getMessage());
+        }
     }
+
+    TMDB_API_KEY = tmdb;
+    GROQ_API_KEY = groq;
+    DB_URL = dbUrl;
+    DB_USER = dbUser;
+    DB_PASSWORD = dbPass;
 }
 
     // Connect to MySQL database
