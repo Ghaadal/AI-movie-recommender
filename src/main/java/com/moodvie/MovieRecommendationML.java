@@ -6,6 +6,7 @@ import java.util.*;
 
 public class MovieRecommendationML {
 
+
     // Get user's saved movies with their overviews
     public static List<Map<String, Object>> getUserProfile(String username) {
         List<Map<String, Object>> savedMovies = new ArrayList<>();
