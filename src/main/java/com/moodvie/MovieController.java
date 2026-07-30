@@ -8,10 +8,10 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class MovieController {
 
-    // Home page check
+   // Home page redirect to index.html
     @GetMapping("/")
-    public String home() {
-        return "Moodvie API is running!";
+    public org.springframework.web.servlet.ModelAndView home() {
+        return new org.springframework.web.servlet.ModelAndView("redirect:/index.html");
     }
 
     // Get trending movies from TMDB
